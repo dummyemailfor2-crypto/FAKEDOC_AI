@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
+import { Dashboard } from './components/Dashboard';
 import { GeneralScreening } from './components/GeneralScreening';
 import { AdvancedVerification } from './components/AdvancedVerification';
 import { AuditRegistry } from './components/AuditRegistry';
+import { SecureDocuments } from './components/SecureDocuments';
+import { ReportGeneration } from './components/ReportGeneration';
+import { AccountSection } from './components/AccountSection';
+import { SettingsSection } from './components/SettingsSection';
 import { CertificateModal } from './components/CertificateModal';
-import { ScreeningResult, AuditRecord } from './types';
-import { sampleDocuments } from './data/sampleDocuments';
+import {
+  ScreeningResult,
+  AuditRecord,
+  SecureDocument,
+  InspectorProfile,
+  AppSettings,
+  NavTab
+} from './types';
+import {
+  sampleDocuments,
+  initialSecureDocuments,
+  defaultInspectorProfile,
+  defaultAppSettings
+} from './data/sampleDocuments';
 
 // Initial pre-loaded audit records for demonstration
 const initialAuditRecords: AuditRecord[] = [
@@ -18,7 +35,7 @@ const initialAuditRecords: AuditRecord[] = [
       holderName: 'SARAH CHEN',
       documentNumber: 'N7821940',
       nationality: 'British Citizen (GBR)',
-      issuer: 'IPS Glasgow / United Kingdom',
+      issuer: 'HM Passport Office / IPS Glasgow',
       issueDate: '29 Nov 2021',
       expiryDate: '28 Nov 2031'
     },
@@ -36,12 +53,21 @@ const initialAuditRecords: AuditRecord[] = [
     faceMatchUsed: true,
     faceMatchResult: 'FACE MATCH',
     faceMatchDetails: 'Facial structural alignment and biometric features correlate with reference image (Similarity: 96%)',
-    verifiedBy: 'Border Security Officer #4092'
+    fingerprintBiometricUsed: true,
+    fingerprintMatchResult: {
+      result: 'FINGERPRINT MATCH',
+      confidence: 96,
+      patternType: 'RIGHT LOOP',
+      minutiaeCount: 38,
+      ridgeCount: 17,
+      details: 'Minutiae ridge flow and core delta coordinates align with reference profile GBR-9105-FP01.'
+    },
+    verifiedBy: 'Dr. Evelyn Vance (EXP-8891)'
   },
   {
     id: 'REC-DEU-551209',
     timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-    documentType: 'Visa',
+    documentType: 'Entry Visa',
     documentName: 'forged_schengen_visa_steiner.svg',
     extractedInfo: {
       holderName: 'MARCUS V. STEINER',
@@ -62,17 +88,45 @@ const initialAuditRecords: AuditRecord[] = [
       'Digital splicing detected in bearer field',
       'Irregular kerning and font mismatch'
     ],
+    alteredRegions: [
+      {
+        id: 'alt-1',
+        field: 'holderName',
+        label: 'Bearer Name',
+        originalOrExpected: 'VERIFIED RECIPIENT NAME',
+        alteredValue: 'MARCUS V. STEINER',
+        technique: 'Digital Typography Splicing & Kerning Anomaly',
+        severity: 'CRITICAL',
+        confidence: 97,
+        description: 'Mismatched Courier typewriter font overlaid onto high-security intaglio background.',
+        boundingBox: { x: 31, y: 31, width: 35, height: 7 }
+      }
+    ],
     fingerprintUsed: true,
     fingerprintSha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     fingerprintStatus: 'MATCH_FOUND',
-    faceMatchUsed: false,
-    verifiedBy: 'Senior Border Forensic Examiner'
+    faceMatchUsed: true,
+    faceMatchResult: 'FACE MISMATCH',
+    faceMatchDetails: 'Facial landmarks do not align with reference subject archive.',
+    fingerprintBiometricUsed: true,
+    fingerprintMatchResult: {
+      result: 'FINGERPRINT MISMATCH',
+      confidence: 18,
+      patternType: 'ARCH',
+      minutiaeCount: 14,
+      ridgeCount: 9,
+      details: 'Ridge pattern divergence detected: Arch morphology vs. registered Loop.'
+    },
+    verifiedBy: 'Dr. Evelyn Vance (EXP-8891)'
   }
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'general' | 'advanced' | 'registry'>('general');
+  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [auditRecords, setAuditRecords] = useState<AuditRecord[]>(initialAuditRecords);
+  const [secureDocs, setSecureDocs] = useState<SecureDocument[]>(initialSecureDocuments);
+  const [inspectorProfile, setInspectorProfile] = useState<InspectorProfile>(defaultInspectorProfile);
+  const [appSettings, setAppSettings] = useState<AppSettings>(defaultAppSettings);
 
   // Transferred data between General and Advanced modes
   const [transferredDoc, setTransferredDoc] = useState<{
@@ -99,6 +153,10 @@ export default function App() {
 
   const handleClearRegistry = () => {
     setAuditRecords([]);
+  };
+
+  const handleAddSecureDoc = (doc: SecureDocument) => {
+    setSecureDocs((prev) => [doc, ...prev]);
   };
 
   const handleTransferToAdvanced = (docData: {
@@ -128,8 +186,32 @@ export default function App() {
         fileName: `${sample.category.toLowerCase()}_sample.svg`,
         sampleFace: sample.sampleReferenceFace
       });
-      setActiveTab('general');
+      setActiveTab('advanced');
     }
+  };
+
+  const handleInspectRecordFromDashboard = (record: AuditRecord) => {
+    const mockResult: ScreeningResult = {
+      documentType: record.documentType,
+      extractedDetails: record.extractedInfo,
+      assessment: record.screeningResult,
+      internalAssessment: record.internalAssessment || 'AUTHENTIC',
+      confidence: record.confidence || 98,
+      reasons: record.reasons,
+      tamperingIndicators: record.tamperingIndicators,
+      inconsistencies: record.inconsistencies || [],
+      alteredRegions: record.alteredRegions,
+      sha256: record.fingerprintSha256,
+      timestamp: record.timestamp
+    };
+    handleOpenCertificate(mockResult, '', record.documentName);
+  };
+
+  const handleResetDemoData = () => {
+    setAuditRecords(initialAuditRecords);
+    setSecureDocs(initialSecureDocuments);
+    setInspectorProfile(defaultInspectorProfile);
+    setAppSettings(defaultAppSettings);
   };
 
   return (
@@ -139,11 +221,22 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         registryCount={auditRecords.length}
+        secureDocsCount={secureDocs.length}
         onSelectSample={handleSelectSampleFromNav}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16">
+        {activeTab === 'dashboard' && (
+          <Dashboard
+            auditRecords={auditRecords}
+            secureDocs={secureDocs}
+            onNavigate={(tab) => setActiveTab(tab)}
+            onSelectSample={handleSelectSampleFromNav}
+            onInspectRecord={handleInspectRecordFromDashboard}
+          />
+        )}
+
         {activeTab === 'general' && (
           <GeneralScreening
             onTransferToAdvanced={handleTransferToAdvanced}
@@ -158,14 +251,47 @@ export default function App() {
             auditRegistry={auditRecords}
             onSaveToRegistry={handleSaveToRegistry}
             onOpenCertificate={handleOpenCertificate}
+            onVaultDocument={handleAddSecureDoc}
           />
         )}
 
-        {activeTab === 'registry' && (
+        {activeTab === 'history' && (
           <AuditRegistry
             records={auditRecords}
             onClearRegistry={handleClearRegistry}
             onOpenCertificate={handleOpenCertificate}
+            onNavigateToReports={(recId) => {
+              setActiveTab('reports');
+            }}
+          />
+        )}
+
+        {activeTab === 'secure-docs' && (
+          <SecureDocuments
+            documents={secureDocs}
+            onAddDocument={handleAddSecureDoc}
+          />
+        )}
+
+        {activeTab === 'reports' && (
+          <ReportGeneration
+            auditRecords={auditRecords}
+            inspectorProfile={inspectorProfile}
+          />
+        )}
+
+        {activeTab === 'account' && (
+          <AccountSection
+            profile={inspectorProfile}
+            onUpdateProfile={setInspectorProfile}
+          />
+        )}
+
+        {activeTab === 'settings' && (
+          <SettingsSection
+            settings={appSettings}
+            onSaveSettings={setAppSettings}
+            onResetDemoData={handleResetDemoData}
           />
         )}
       </main>
@@ -176,10 +302,10 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-slate-800">FAKEDOC-AI</span>
             <span>•</span>
-            <span>AI Forensic Screening System</span>
+            <span>Forensic Document Screening &amp; Tampering Analysis Platform</span>
           </div>
           <div className="text-[11px] text-slate-400">
-            Powered by Google Gemini 3.8 Multi-Modal &amp; FIPS SHA-256 Fingerprinting
+            Powered by Google Gemini Multi-Modal, ICAO 9303 Checksum Engine &amp; FIPS SHA-256 Vaulting
           </div>
         </div>
       </footer>

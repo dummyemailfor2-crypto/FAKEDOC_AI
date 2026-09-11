@@ -1,6 +1,6 @@
 {
   "name": "FAKEDOC-AI",
-  "description": "AI-Powered Document Screening platform featuring General and Advanced verification modes, cryptographic SHA-256 fingerprinting, and face matching.",
+  "description": "AI-Powered Document Screening platform featuring General and Advanced verification modes, tampering detection with visual alteration maps, facial & fingerprint reference checks, History ledger, Secure Documents vault, and Evidentiary Report Generation.",
   "requestFramePermissions": [
     "camera"
   ],

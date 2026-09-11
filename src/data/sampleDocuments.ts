@@ -112,6 +112,59 @@ export const sampleFaceNonMatching = 'data:image/svg+xml;charset=utf-8,' + encod
   <path d="M50 320 Q150 260 250 320 L250 360 L50 360 Z" fill="#047857"/>
 </svg>`);
 
+// Biometric Fingerprint reference SVG (Sarah Chen - Right Index Loop pattern)
+export const sampleFingerprintMatching = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="300" viewBox="0 0 240 300">
+  <rect width="240" height="300" rx="12" fill="#090d16"/>
+  <g fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" opacity="0.85">
+    <!-- Concentric Loops and Minutiae Ridges -->
+    <path d="M120 40 C75 40 45 75 45 130 C45 200 80 255 120 270 C160 255 195 200 195 130 C195 75 165 40 120 40 Z"/>
+    <path d="M120 60 C85 60 60 90 60 135 C60 195 90 240 120 250 C150 240 180 195 180 135 C180 90 155 60 120 60 Z"/>
+    <path d="M120 80 C95 80 75 105 75 140 C75 185 100 220 120 230 C140 220 165 185 165 140 C165 105 145 80 120 80 Z"/>
+    <path d="M120 100 C105 100 90 118 90 145 C90 178 108 202 120 210 C132 202 150 178 150 145 C150 118 135 100 120 100 Z"/>
+    <path d="M120 120 C112 120 105 130 105 150 C105 170 115 185 120 190 C125 185 135 170 135 150 C135 130 128 120 120 120 Z"/>
+    <!-- Core and delta points -->
+    <path d="M115 145 Q120 138 125 145 Q120 160 115 145"/>
+    <path d="M68 200 Q75 180 72 165"/>
+    <path d="M172 200 Q165 180 168 165"/>
+    <path d="M52 140 Q55 110 70 85"/>
+    <path d="M188 140 Q185 110 170 85"/>
+  </g>
+  <!-- Biometric Landmark Minutiae Points -->
+  <circle cx="120" cy="142" r="3.5" fill="#34d399"/>
+  <circle cx="98" cy="120" r="3" fill="#34d399"/>
+  <circle cx="142" cy="122" r="3" fill="#34d399"/>
+  <circle cx="105" cy="175" r="3" fill="#34d399"/>
+  <circle cx="138" cy="172" r="3" fill="#34d399"/>
+  <circle cx="78" cy="148" r="3" fill="#34d399"/>
+  <circle cx="162" cy="145" r="3" fill="#34d399"/>
+  <text x="120" y="288" font-family="monospace" font-size="9" fill="#94a3b8" text-anchor="middle">REF #GBR-9105-FP01 • RIGHT INDEX</text>
+</svg>`);
+
+// Non-matching biometric fingerprint SVG (Unknown / Mismatched thumbprint - Arch pattern)
+export const sampleFingerprintNonMatching = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="300" viewBox="0 0 240 300">
+  <rect width="240" height="300" rx="12" fill="#180b0b"/>
+  <g fill="none" stroke="#f87171" stroke-width="2.2" stroke-linecap="round" opacity="0.85">
+    <!-- Plain Arch / Tented Arch pattern -->
+    <path d="M40 220 Q120 110 200 220"/>
+    <path d="M48 200 Q120 95 192 200"/>
+    <path d="M56 180 Q120 80 184 180"/>
+    <path d="M64 160 Q120 65 176 160"/>
+    <path d="M72 140 Q120 50 168 140"/>
+    <path d="M80 120 Q120 35 160 120"/>
+    <path d="M90 100 Q120 20 150 100"/>
+    <path d="M100 80 Q120 10 140 80"/>
+    <line x1="120" y1="30" x2="120" y2="260" stroke="#f87171" stroke-width="2"/>
+    <path d="M40 250 Q120 180 200 250"/>
+  </g>
+  <!-- Mismatched Minutiae -->
+  <circle cx="120" cy="90" r="3.5" fill="#ef4444"/>
+  <circle cx="85" cy="140" r="3" fill="#ef4444"/>
+  <circle cx="155" cy="140" r="3" fill="#ef4444"/>
+  <circle cx="68" cy="180" r="3" fill="#ef4444"/>
+  <circle cx="172" cy="180" r="3" fill="#ef4444"/>
+  <text x="120" y="288" font-family="monospace" font-size="9" fill="#fca5a5" text-anchor="middle">REF #SUBJ-UNMATCHED • PLAIN ARCH</text>
+</svg>`);
+
 export const sampleDocuments: SampleDocument[] = [
   {
     id: 'sample-passport-real',
@@ -126,6 +179,7 @@ export const sampleDocuments: SampleDocument[] = [
       false
     ),
     sampleReferenceFace: sampleFaceMatching,
+    sampleReferenceFingerprint: sampleFingerprintMatching,
     extracted: {
       documentType: 'Passport',
       documentNumber: 'N7821940',
@@ -138,6 +192,7 @@ export const sampleDocuments: SampleDocument[] = [
       mrzDetected: true,
       notes: 'Standard ICAO TD3 layout verified. Optical security alignment valid.'
     },
+    alteredRegions: [],
     knownSha256: '8f434346648f6b96df89dda901c5176b10e6d059612d556b925284173ac54096'
   },
   {
@@ -148,6 +203,7 @@ export const sampleDocuments: SampleDocument[] = [
     description: 'Altered Schengen visa document displaying spliced font anomalies and invalid security alignment.',
     imageUrl: createVisaSvg('MARCUS V. STEINER', 'V-55120938'),
     sampleReferenceFace: sampleFaceNonMatching,
+    sampleReferenceFingerprint: sampleFingerprintNonMatching,
     extracted: {
       documentType: 'Visa',
       documentNumber: 'V-55120938',
@@ -158,7 +214,33 @@ export const sampleDocuments: SampleDocument[] = [
       expiryDate: '09 Jan 2026',
       mrzDetected: true,
       notes: 'Anomalous font rendering detected in bearer field. Splicing indicators present.'
-    }
+    },
+    alteredRegions: [
+      {
+        id: 'alt-1',
+        field: 'holderName',
+        label: 'Bearer Name',
+        originalOrExpected: 'VERIFIED RECIPIENT NAME (INSPECTION BASELINE)',
+        alteredValue: 'MARCUS V. STEINER',
+        technique: 'Digital Typography Splicing & Kerning Anomaly',
+        severity: 'CRITICAL',
+        confidence: 97,
+        description: 'Mismatched Courier typewriter font overlaid onto high-security intaglio background. Inconsistent anti-aliasing edges and jagged raster baseline detected.',
+        boundingBox: { x: 31, y: 31, width: 35, height: 7 }
+      },
+      {
+        id: 'alt-2',
+        field: 'watermark',
+        label: 'Consular Watermark Seal',
+        originalOrExpected: 'Continuous circular guilloche security seal',
+        alteredValue: 'Interrupted / Cleared Pixel Zone',
+        technique: 'Substrate Pattern Eradication',
+        severity: 'HIGH',
+        confidence: 94,
+        description: 'Circular background seal is unnaturally cut off around the bearer text box, indicating digital cloning or image eraser tool application.',
+        boundingBox: { x: 30, y: 26, width: 44, height: 20 }
+      }
+    ]
   },
   {
     id: 'sample-borderpass-real',
@@ -173,6 +255,7 @@ export const sampleDocuments: SampleDocument[] = [
       false
     ),
     sampleReferenceFace: sampleFaceMatching,
+    sampleReferenceFingerprint: sampleFingerprintMatching,
     extracted: {
       documentType: 'Border Pass',
       documentNumber: 'BP-881920',
@@ -185,6 +268,7 @@ export const sampleDocuments: SampleDocument[] = [
       mrzDetected: true,
       notes: 'Machine-readable zone checksums valid. Substrate integrity intact.'
     },
+    alteredRegions: [],
     knownSha256: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d'
   },
   {
@@ -200,6 +284,7 @@ export const sampleDocuments: SampleDocument[] = [
       true
     ),
     sampleReferenceFace: sampleFaceNonMatching,
+    sampleReferenceFingerprint: sampleFingerprintNonMatching,
     extracted: {
       documentType: 'National Identity Card',
       documentNumber: 'ID-4491029',
@@ -211,7 +296,33 @@ export const sampleDocuments: SampleDocument[] = [
       dateOfBirth: '12 Mar 1985',
       mrzDetected: true,
       notes: 'Digital tampering detected in date of expiry field. Spliced font baseline and irregular kerning.'
-    }
+    },
+    alteredRegions: [
+      {
+        id: 'alt-1',
+        field: 'expiryDate',
+        label: 'Date of Expiry',
+        originalOrExpected: '28 NOV 2028 (10-Year Statutory Period)',
+        alteredValue: '28 NOV 2039 [TAMPERED]',
+        technique: 'Date Extension & Glyph Replacement',
+        severity: 'CRITICAL',
+        confidence: 98,
+        description: 'Expiry year altered from 2028 to 2039. Exceeds statutory German identity card 10-year maximum validity. Baseline alignment is skewed by 3.2 degrees with mismatched pixel grid.',
+        boundingBox: { x: 34, y: 57, width: 33, height: 7 }
+      },
+      {
+        id: 'alt-2',
+        field: 'mrzChecksum',
+        label: 'MRZ Checksum Validation',
+        originalOrExpected: 'Computed Checksum: 04 (for 2028)',
+        alteredValue: 'Checksum Mismatch with Visual Date',
+        technique: 'Visual Text & MRZ Checksum Discrepancy',
+        severity: 'HIGH',
+        confidence: 96,
+        description: 'The Machine Readable Zone line 2 encodes an expiry date differing from the visually manipulated 2039 date on the upper card layer.',
+        boundingBox: { x: 6, y: 81, width: 88, height: 10 }
+      }
+    ]
   },
   {
     id: 'sample-diplomatic-permit-real',
@@ -226,6 +337,7 @@ export const sampleDocuments: SampleDocument[] = [
       false
     ),
     sampleReferenceFace: sampleFaceMatching,
+    sampleReferenceFingerprint: sampleFingerprintMatching,
     extracted: {
       documentType: 'Travel Permit',
       documentNumber: 'DP-0029184',
@@ -237,6 +349,94 @@ export const sampleDocuments: SampleDocument[] = [
       dateOfBirth: '18 Jul 1992',
       mrzDetected: true,
       notes: 'Diplomatic security crest verified. Security fibers and UV alignment consistent.'
-    }
+    },
+    alteredRegions: []
   }
 ];
+
+export const initialSecureDocuments: any[] = [
+  {
+    id: 'SEC-DOC-001',
+    title: 'Sarah Chen - Diplomatic Passport (Verified)',
+    fileName: 'passport_sarah_chen_gbr.pdf',
+    fileFormat: 'PDF / ICAO TD3',
+    fileSizeBytes: 2457600,
+    documentType: 'Passport',
+    holderName: 'SARAH CHEN',
+    documentNumber: 'N7821940',
+    securityClassification: 'SECRET',
+    encryptionStatus: 'AES-256-GCM SEALED',
+    sha256: '8f434346648f6b96df89dda901c5176b10e6d059612d556b925284173ac54096',
+    vaultedAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString(),
+    retentionUntil: new Date(Date.now() + 3600000 * 24 * 365 * 5).toISOString(),
+    verifiedStatus: 'REAL',
+    imageUrl: sampleDocuments[0].imageUrl,
+    tags: ['Biometric Verified', 'ICAO-9303', 'Diplomatic'],
+    accessLogsCount: 14,
+    custodianBadge: 'EXP-8891'
+  },
+  {
+    id: 'SEC-DOC-002',
+    title: 'Marcus V. Steiner - Forged Visa Seizure Archive',
+    fileName: 'seized_forged_visa_steiner.pdf',
+    fileFormat: 'PDF / High-Res Scan',
+    fileSizeBytes: 3891200,
+    documentType: 'Entry Visa',
+    holderName: 'MARCUS V. STEINER',
+    documentNumber: 'V-55120938',
+    securityClassification: 'TOP SECRET',
+    encryptionStatus: 'AES-256-GCM SEALED',
+    sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    vaultedAt: new Date(Date.now() - 3600000 * 24 * 7).toISOString(),
+    retentionUntil: new Date(Date.now() + 3600000 * 24 * 365 * 10).toISOString(),
+    verifiedStatus: 'FAKE',
+    imageUrl: sampleDocuments[1].imageUrl,
+    tags: ['Forensic Evidence', 'Interpol Seizure', 'Font Splicing'],
+    accessLogsCount: 29,
+    custodianBadge: 'EXP-8891'
+  },
+  {
+    id: 'SEC-DOC-003',
+    title: 'Elena Rostova - Transit Border Pass Validated',
+    fileName: 'border_pass_elena_rostova.svg',
+    fileFormat: 'SVG / Vector Specimen',
+    fileSizeBytes: 1048576,
+    documentType: 'Border Pass',
+    holderName: 'ELENA ROSTOVA',
+    documentNumber: 'BP-881920',
+    securityClassification: 'CONFIDENTIAL',
+    encryptionStatus: 'SHA-256 SIGNED',
+    sha256: 'ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d',
+    vaultedAt: new Date(Date.now() - 3600000 * 24 * 12).toISOString(),
+    retentionUntil: new Date(Date.now() + 3600000 * 24 * 365 * 3).toISOString(),
+    verifiedStatus: 'REAL',
+    imageUrl: sampleDocuments[2].imageUrl,
+    tags: ['Transit Authority', 'Biometric Linked'],
+    accessLogsCount: 8,
+    custodianBadge: 'EXP-8891'
+  }
+];
+
+export const defaultInspectorProfile = {
+  name: 'Dr. Evelyn Vance, D.Sc.',
+  badgeId: 'EXP-8891-FORENSIC',
+  clearanceLevel: 'Tier 3 Senior Forensic Specialist',
+  agency: 'International Document Security Agency',
+  department: 'Biometrics & Anti-Fraud Division',
+  documentsVerified: 1482,
+  fraudDetectedCount: 167,
+  activeSessionId: 'SESS-' + Date.now().toString(36).toUpperCase(),
+  lastLogin: new Date().toISOString()
+};
+
+export const defaultAppSettings = {
+  ocrStrictness: 'STRICT' as const,
+  tamperingSensitivity: 'HIGH' as const,
+  biometricFaceThreshold: 85,
+  biometricFingerprintThreshold: 90,
+  autoVaultOnScreening: true,
+  enableAIFallback: true,
+  defaultDocumentFormat: 'AUTO_DETECT',
+  alertSound: true
+};
+

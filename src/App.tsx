@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
 import { GeneralScreening } from './components/GeneralScreening';
@@ -9,13 +9,16 @@ import { ReportGeneration } from './components/ReportGeneration';
 import { AccountSection } from './components/AccountSection';
 import { SettingsSection } from './components/SettingsSection';
 import { CertificateModal } from './components/CertificateModal';
+import { GoogleLoginModal } from './components/GoogleLoginModal';
+import { GoogleAuthGate } from './components/GoogleAuthGate';
 import {
   ScreeningResult,
   AuditRecord,
   SecureDocument,
   InspectorProfile,
   AppSettings,
-  NavTab
+  NavTab,
+  GoogleUser
 } from './types';
 import {
   sampleDocuments,
@@ -122,11 +125,61 @@ const initialAuditRecords: AuditRecord[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  // Google User Authentication State
+  const [googleUser, setGoogleUser] = useState<GoogleUser | null>(() => {
+    try {
+      const stored = localStorage.getItem('fakedoc_google_user');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {
+      // Ignore json parse failure
+    }
+    return null;
+  });
+
+  // Google Login Modal State
+  const [googleModalState, setGoogleModalState] = useState<{
+    isOpen: boolean;
+    targetTabName?: string;
+    pendingTab?: NavTab;
+  }>({
+    isOpen: false
+  });
+
+  // Default to 'general' if unauthenticated, otherwise restore to 'dashboard'
+  const [activeTab, setActiveTab] = useState<NavTab>(() => {
+    try {
+      const storedUser = localStorage.getItem('fakedoc_google_user');
+      if (storedUser) {
+        return 'dashboard';
+      }
+    } catch {
+      // Fallback
+    }
+    return 'general';
+  });
+
   const [auditRecords, setAuditRecords] = useState<AuditRecord[]>(initialAuditRecords);
   const [secureDocs, setSecureDocs] = useState<SecureDocument[]>(initialSecureDocuments);
   const [inspectorProfile, setInspectorProfile] = useState<InspectorProfile>(defaultInspectorProfile);
   const [appSettings, setAppSettings] = useState<AppSettings>(defaultAppSettings);
+
+  // Sync inspector profile when Google user changes
+  useEffect(() => {
+    if (googleUser) {
+      setInspectorProfile((prev) => ({
+        ...prev,
+        fullName: googleUser.name,
+        name: googleUser.name,
+        email: googleUser.email,
+        badgeNumber: googleUser.badgeId,
+        badgeId: googleUser.badgeId,
+        clearanceLevel: googleUser.clearanceLevel,
+        googleUser: googleUser
+      }));
+    }
+  }, [googleUser]);
 
   // Transferred data between General and Advanced modes
   const [transferredDoc, setTransferredDoc] = useState<{
@@ -147,6 +200,60 @@ export default function App() {
     result: null
   });
 
+  // Check if a tab is restricted behind Google Login
+  const isRestrictedTab = (tab: NavTab) => tab !== 'general';
+
+  const handleTabSelection = (tab: NavTab) => {
+    if (isRestrictedTab(tab) && !googleUser) {
+      // Open Google Login modal with target tab context
+      const tabNames: Record<NavTab, string> = {
+        dashboard: 'Dashboard',
+        general: 'General Verification',
+        advanced: 'Advanced Forensic Mode',
+        history: 'Cryptographic Audit Registry',
+        'secure-docs': 'Secure Documents Vault',
+        reports: 'Forensic Reports',
+        account: 'Inspector Account',
+        settings: 'System Settings'
+      };
+      setGoogleModalState({
+        isOpen: true,
+        targetTabName: tabNames[tab],
+        pendingTab: tab
+      });
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  const handleOpenGoogleLogin = (targetTabName?: string) => {
+    setGoogleModalState({
+      isOpen: true,
+      targetTabName: targetTabName || 'Restricted Forensic Suite',
+      pendingTab: undefined
+    });
+  };
+
+  const handleGoogleLoginSuccess = (user: GoogleUser) => {
+    setGoogleUser(user);
+    const target = googleModalState.pendingTab;
+    setGoogleModalState({ isOpen: false });
+
+    // Transition to requested tab or dashboard
+    if (target) {
+      setActiveTab(target);
+    } else if (activeTab === 'general') {
+      setActiveTab('dashboard');
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('fakedoc_google_user');
+    setGoogleUser(null);
+    // Return to public general verification mode
+    setActiveTab('general');
+  };
+
   const handleSaveToRegistry = (record: AuditRecord) => {
     setAuditRecords((prev) => [record, ...prev]);
   };
@@ -166,6 +273,14 @@ export default function App() {
     sampleFace?: string;
   }) => {
     setTransferredDoc(docData);
+    if (!googleUser) {
+      setGoogleModalState({
+        isOpen: true,
+        targetTabName: 'Advanced Forensic Mode',
+        pendingTab: 'advanced'
+      });
+      return;
+    }
     setActiveTab('advanced');
   };
 
@@ -186,7 +301,15 @@ export default function App() {
         fileName: `${sample.category.toLowerCase()}_sample.svg`,
         sampleFace: sample.sampleReferenceFace
       });
-      setActiveTab('advanced');
+      if (!googleUser) {
+        setGoogleModalState({
+          isOpen: true,
+          targetTabName: 'Advanced Forensic Mode',
+          pendingTab: 'advanced'
+        });
+      } else {
+        setActiveTab('advanced');
+      }
     }
   };
 
@@ -219,80 +342,100 @@ export default function App() {
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabSelection}
         registryCount={auditRecords.length}
         secureDocsCount={secureDocs.length}
         onSelectSample={handleSelectSampleFromNav}
+        googleUser={googleUser}
+        onOpenGoogleLogin={handleOpenGoogleLogin}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16">
-        {activeTab === 'dashboard' && (
-          <Dashboard
-            auditRecords={auditRecords}
-            secureDocs={secureDocs}
-            onNavigate={(tab) => setActiveTab(tab)}
-            onSelectSample={handleSelectSampleFromNav}
-            onInspectRecord={handleInspectRecordFromDashboard}
-          />
-        )}
-
+        {/* PUBLIC MODE: General Verification (Accessible without login) */}
         {activeTab === 'general' && (
           <GeneralScreening
             onTransferToAdvanced={handleTransferToAdvanced}
             onSaveToRegistry={handleSaveToRegistry}
             onOpenCertificate={handleOpenCertificate}
+            isGoogleAuthenticated={!!googleUser}
+            onOpenGoogleLogin={handleOpenGoogleLogin}
           />
         )}
 
-        {activeTab === 'advanced' && (
-          <AdvancedVerification
-            initialDocData={transferredDoc}
-            auditRegistry={auditRecords}
-            onSaveToRegistry={handleSaveToRegistry}
-            onOpenCertificate={handleOpenCertificate}
-            onVaultDocument={handleAddSecureDoc}
+        {/* RESTRICTED SUITE: Gated behind Google Login */}
+        {isRestrictedTab(activeTab) && !googleUser ? (
+          <GoogleAuthGate
+            tab={activeTab}
+            onOpenGoogleLogin={() => handleOpenGoogleLogin()}
+            onGoToGeneralScreening={() => setActiveTab('general')}
           />
-        )}
+        ) : (
+          <>
+            {activeTab === 'dashboard' && (
+              <Dashboard
+                auditRecords={auditRecords}
+                secureDocs={secureDocs}
+                onNavigate={(tab) => handleTabSelection(tab)}
+                onSelectSample={handleSelectSampleFromNav}
+                onInspectRecord={handleInspectRecordFromDashboard}
+              />
+            )}
 
-        {activeTab === 'history' && (
-          <AuditRegistry
-            records={auditRecords}
-            onClearRegistry={handleClearRegistry}
-            onOpenCertificate={handleOpenCertificate}
-            onNavigateToReports={(recId) => {
-              setActiveTab('reports');
-            }}
-          />
-        )}
+            {activeTab === 'advanced' && (
+              <AdvancedVerification
+                initialDocData={transferredDoc}
+                auditRegistry={auditRecords}
+                onSaveToRegistry={handleSaveToRegistry}
+                onOpenCertificate={handleOpenCertificate}
+                onVaultDocument={handleAddSecureDoc}
+              />
+            )}
 
-        {activeTab === 'secure-docs' && (
-          <SecureDocuments
-            documents={secureDocs}
-            onAddDocument={handleAddSecureDoc}
-          />
-        )}
+            {activeTab === 'history' && (
+              <AuditRegistry
+                records={auditRecords}
+                onClearRegistry={handleClearRegistry}
+                onOpenCertificate={handleOpenCertificate}
+                onNavigateToReports={(recId) => {
+                  setActiveTab('reports');
+                }}
+              />
+            )}
 
-        {activeTab === 'reports' && (
-          <ReportGeneration
-            auditRecords={auditRecords}
-            inspectorProfile={inspectorProfile}
-          />
-        )}
+            {activeTab === 'secure-docs' && (
+              <SecureDocuments
+                documents={secureDocs}
+                onAddDocument={handleAddSecureDoc}
+              />
+            )}
 
-        {activeTab === 'account' && (
-          <AccountSection
-            profile={inspectorProfile}
-            onUpdateProfile={setInspectorProfile}
-          />
-        )}
+            {activeTab === 'reports' && (
+              <ReportGeneration
+                auditRecords={auditRecords}
+                inspectorProfile={inspectorProfile}
+              />
+            )}
 
-        {activeTab === 'settings' && (
-          <SettingsSection
-            settings={appSettings}
-            onSaveSettings={setAppSettings}
-            onResetDemoData={handleResetDemoData}
-          />
+            {activeTab === 'account' && (
+              <AccountSection
+                profile={inspectorProfile}
+                onUpdateProfile={setInspectorProfile}
+                googleUser={googleUser}
+                onOpenGoogleLogin={handleOpenGoogleLogin}
+                onSignOut={handleSignOut}
+              />
+            )}
+
+            {activeTab === 'settings' && (
+              <SettingsSection
+                settings={appSettings}
+                onSaveSettings={setAppSettings}
+                onResetDemoData={handleResetDemoData}
+              />
+            )}
+          </>
         )}
       </main>
 
@@ -317,6 +460,15 @@ export default function App() {
         result={certificateModal.result}
         docImage={certificateModal.docImage}
         docFileName={certificateModal.docFileName}
+      />
+
+      {/* Google Login Modal */}
+      <GoogleLoginModal
+        isOpen={googleModalState.isOpen}
+        onClose={() => setGoogleModalState({ isOpen: false })}
+        onLoginSuccess={handleGoogleLoginSuccess}
+        onSuccess={handleGoogleLoginSuccess}
+        targetTabName={googleModalState.targetTabName}
       />
     </div>
   );

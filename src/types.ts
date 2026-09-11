@@ -143,16 +143,47 @@ export interface ReportConfig {
   dateGenerated: string;
 }
 
+export interface GoogleUser {
+  id: string;
+  name: string;
+  email: string;
+  picture?: string;
+  givenName?: string;
+  familyName?: string;
+  accessToken: string;
+  idToken?: string;
+  role: string;
+  agency: string;
+  badgeId: string;
+  clearanceLevel: string;
+  signedInAt: string;
+  sessionExpiresAt: string;
+  authMethod: 'google_oauth' | 'google_workspace';
+  scopes: string[];
+}
+
 export interface InspectorProfile {
   name: string;
+  fullName?: string;
+  title?: string;
   badgeId: string;
+  badgeNumber?: string;
   clearanceLevel: string;
   agency: string;
   department: string;
+  accreditationId?: string;
   documentsVerified: number;
+  inspectionsCompleted?: number;
   fraudDetectedCount: number;
+  forgeriesIntercepted?: number;
+  biometricsAudited?: number;
+  pgpPublicKeyFingerprint?: string;
   activeSessionId: string;
   lastLogin: string;
+  googleEmail?: string;
+  googleSub?: string;
+  googlePicture?: string;
+  authProvider?: 'google' | 'guest';
 }
 
 export interface AppSettings {

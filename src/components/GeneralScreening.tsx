@@ -15,7 +15,9 @@ import {
   Info,
   ExternalLink,
   Sparkles,
-  Search
+  Search,
+  Globe,
+  Lock
 } from 'lucide-react';
 import { ScreeningResult, SampleDocument, AuditRecord } from '../types';
 import { sampleDocuments } from '../data/sampleDocuments';
@@ -30,12 +32,16 @@ interface GeneralScreeningProps {
   }) => void;
   onSaveToRegistry: (record: AuditRecord) => void;
   onOpenCertificate: (result: ScreeningResult, docImage: string, fileName: string) => void;
+  isGoogleAuthenticated?: boolean;
+  onOpenGoogleLogin?: (targetTabName?: string) => void;
 }
 
 export const GeneralScreening: React.FC<GeneralScreeningProps> = ({
   onTransferToAdvanced,
   onSaveToRegistry,
-  onOpenCertificate
+  onOpenCertificate,
+  isGoogleAuthenticated = false,
+  onOpenGoogleLogin
 }) => {
   const [selectedFile, setSelectedFile] = useState<{
     name: string;
@@ -182,16 +188,32 @@ export const GeneralScreening: React.FC<GeneralScreeningProps> = ({
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
       {/* Title & Introduction */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
-          <Shield className="w-3.5 h-3.5" />
-          <span>Real-Time Forensic AI Engine</span>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+            <Globe className="w-3.5 h-3.5" />
+            <span>Public Screening (No Login Required)</span>
+          </div>
+          {!isGoogleAuthenticated ? (
+            <button
+              onClick={() => onOpenGoogleLogin?.('Forensic Suite')}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-semibold cursor-pointer transition"
+            >
+              <Lock className="w-3 h-3 text-slate-500" />
+              <span>Advanced Mode &amp; Registry require Google Sign-In</span>
+            </button>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
+              <Shield className="w-3.5 h-3.5" />
+              <span>Google Identity Verified Session</span>
+            </div>
+          )}
         </div>
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
           General Document Screening
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto text-sm">
-          Instant AI-based document verification. Real-time visual and textual analysis for passports,
-          visas, national IDs, and permits.
+          Instant public AI-based document verification. Real-time visual and textual analysis for passports,
+          visas, national IDs, and permits without any account required.
         </p>
       </div>
 
@@ -500,9 +522,15 @@ export const GeneralScreening: React.FC<GeneralScreeningProps> = ({
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
                 <button
-                  onClick={saveCurrentToRegistry}
+                  onClick={() => {
+                    if (!isGoogleAuthenticated) {
+                      onOpenGoogleLogin?.('Cryptographic Audit Registry');
+                      return;
+                    }
+                    saveCurrentToRegistry();
+                  }}
                   disabled={savedToRegistry}
-                  className="px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                  className="px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                 >
                   {savedToRegistry ? (
                     <>
@@ -513,6 +541,7 @@ export const GeneralScreening: React.FC<GeneralScreeningProps> = ({
                     <>
                       <FileCheck className="w-3.5 h-3.5 text-blue-600" />
                       <span>Save into Audit Registry</span>
+                      {!isGoogleAuthenticated && <Lock className="w-3 h-3 text-slate-400 ml-1" />}
                     </>
                   )}
                 </button>
@@ -522,25 +551,33 @@ export const GeneralScreening: React.FC<GeneralScreeningProps> = ({
                     onClick={() =>
                       onOpenCertificate(screeningResult, selectedFile.previewUrl, selectedFile.name)
                     }
-                    className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold flex items-center gap-1.5 transition"
+                    className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>Inspection Certificate</span>
                   </button>
 
                   <button
-                    onClick={() =>
+                    onClick={() => {
+                      if (!isGoogleAuthenticated) {
+                        onOpenGoogleLogin?.('Advanced Forensic Mode');
+                        return;
+                      }
                       onTransferToAdvanced({
                         imageUrl: selectedFile.previewUrl,
                         fileName: selectedFile.name,
                         result: screeningResult,
                         sampleFace: selectedFile.sampleFace
-                      })
-                    }
-                    className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition"
+                      });
+                    }}
+                    className="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
                   >
                     <span>Advanced Mode</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    {!isGoogleAuthenticated ? (
+                      <Lock className="w-3.5 h-3.5 text-blue-200" />
+                    ) : (
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    )}
                   </button>
                 </div>
               </div>

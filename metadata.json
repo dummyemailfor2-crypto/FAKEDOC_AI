@@ -1,0 +1,10 @@
+{
+  "name": "FAKEDOC-AI",
+  "description": "AI-Powered Document Screening platform featuring General and Advanced verification modes, cryptographic SHA-256 fingerprinting, and face matching.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
